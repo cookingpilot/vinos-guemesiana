@@ -95,6 +95,24 @@ main.wrap{margin-top:-48px}
 .ctrl input{width:56px;text-align:center;font-size:22px;font-weight:700;border:0;background:transparent;outline:none;-moz-appearance:textfield}
 .ctrl input::-webkit-outer-spin-button,.ctrl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
+/* ---------- botones de un toque ---------- */
+.vinos{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.vino{position:relative;border:0;border-radius:20px;padding:20px 12px 18px;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#fff;box-shadow:0 6px 18px rgba(60,20,20,.18);-webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation;transition:transform .08s}
+.vino:active{transform:scale(.96)}
+.vino.malbec{background:linear-gradient(160deg,#8a2638,#5c1624)}
+.vino.torrontes{background:linear-gradient(160deg,#e6c75f,#c49a2c);color:#3b2a06}
+.vino .botella-g{width:16px;height:40px;border-radius:5px 5px 4px 4px;background:currentColor;opacity:.35;position:relative;margin-bottom:8px}
+.vino .botella-g:before{content:"";position:absolute;left:4px;top:-11px;width:8px;height:13px;border-radius:3px;background:inherit}
+.vino .vn{font-family:Fraunces,serif;font-size:20px;font-weight:800}
+.vino .vc{font-family:Fraunces,serif;font-size:46px;font-weight:800;line-height:1.05;margin-top:4px}
+.vino .vl{font-size:12px;font-weight:600;opacity:.8}
+.vino .mas{position:absolute;top:10px;right:12px;font-weight:800;font-size:15px;background:rgba(255,255,255,.22);border-radius:999px;padding:3px 9px}
+.vino.pop .vc{animation:pop .25s ease}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
+.estado-carga{min-height:22px;text-align:center;margin-top:12px;font-size:13px;color:var(--gris)}
+.guardando{display:inline-block;background:var(--oro-claro);color:#7a5d24;border-radius:999px;padding:3px 10px;font-weight:600}
+.deshacer{display:block;margin:6px auto 0}
+
 /* ---------- ranking ---------- */
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
@@ -441,6 +459,101 @@ async function guardarVenta(btn, esAdmin){
   });
 }
 
+/* ---------------- botones de un toque (mozos) ---------------- */
+const P = { m: 0, t: 0, timer: null, enviando: false };
+
+function fechaBotones(){ return S.form.dia === 'ayer' ? sumarDias(S.data.hoy, -1) : S.data.hoy; }
+function baseDia(k){
+  const f = fechaBotones();
+  return (S.data.misCargas || []).filter(c => c.fecha === f).reduce((s, c) => s + (k === 'm' ? c.malbec : c.torrontes), 0);
+}
+
+function bloqueBotones(){
+  const hoy = S.data.hoy, f = S.form;
+  const ult = (S.data.misCargas || []).find(c => c.anulable);
+  return `
+  <div class="card">
+    <h3>Tocá cada vez que vendés un vino</h3>
+    <div class="seg">
+      <button class="${f.dia==='hoy'?'on':''}" onclick="elegirDiaBotones('hoy')">Hoy · ${fFecha(hoy)}</button>
+      <button class="${f.dia==='ayer'?'on':''}" onclick="elegirDiaBotones('ayer')">Ayer · ${fFecha(sumarDias(hoy,-1))}</button>
+    </div>
+    <div class="vinos">
+      ${botonVino('m', 'Malbec', 'malbec')}
+      ${botonVino('t', 'Torrontés', 'torrontes')}
+    </div>
+    <div class="estado-carga" id="pend"></div>
+    ${ult ? `<button class="btn fantasma chico deshacer" onclick="deshacer('${esc(ult.id)}', ${ult.total})">↶ Deshacer la última (${ult.total} ${ult.total===1?'vino':'vinos'})</button>` : ''}
+  </div>`;
+}
+
+function botonVino(k, nombre, clase){
+  return `<button class="vino ${clase}" id="bv_${k}" onclick="tocar('${k}')" aria-label="Sumar un ${nombre}">
+    <span class="botella-g"></span>
+    <span class="vn">${nombre}</span>
+    <span class="vc" id="cnt_${k}">${baseDia(k) + P[k]}</span>
+    <span class="vl">${S.form.dia === 'ayer' ? 'ayer' : 'hoy'}</span>
+    <span class="mas">+1</span>
+  </button>`;
+}
+
+function pintarContadores(){
+  ['m','t'].forEach(k => { const e = $('#cnt_'+k); if (e) e.textContent = baseDia(k) + P[k]; });
+  const p = $('#pend'); if (!p) return;
+  const n = P.m + P.t;
+  if (P.enviando && !n) p.innerHTML = '<span class="guardando">Guardando…</span>';
+  else if (n) p.innerHTML = `<span class="guardando">+${n} sin guardar… se guarda solo</span>`;
+  else p.innerHTML = '';
+}
+
+function tocar(k){
+  P[k]++;
+  if (navigator.vibrate) { try { navigator.vibrate(15); } catch(e){} }
+  const b = $('#bv_'+k);
+  if (b) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+  pintarContadores();
+  clearTimeout(P.timer);
+  P.timer = setTimeout(enviarPendientes, 1200);
+}
+
+async function enviarPendientes(){
+  if (P.enviando) { clearTimeout(P.timer); P.timer = setTimeout(enviarPendientes, 600); return; }
+  const m = P.m, t = P.t;
+  if (!m && !t) return;
+  P.m = 0; P.t = 0; P.enviando = true;
+  const fecha = fechaBotones();
+  // se suman a la base local para que el número no "salte" mientras se guarda
+  S.data.misCargas.unshift({ id: '_tmp', fecha, malbec: m, torrontes: t, total: m + t, anulable: false });
+  pintarContadores();
+  try {
+    await api('cargar', { fecha, malbec: m, torrontes: t });
+    toast(`¡Guardado! +${m + t} ${m + t === 1 ? 'vino' : 'vinos'} 🍷`, 'ok');
+  } catch(e) {
+    P.m += m; P.t += t;
+    toast('No se pudo guardar: ' + e.message + '. Se reintenta solo.', 'err');
+    clearTimeout(P.timer); P.timer = setTimeout(enviarPendientes, 4000);
+  } finally {
+    P.enviando = false;
+  }
+  try { await refrescar(); } catch(e) {}
+}
+
+async function elegirDiaBotones(d){
+  if (d === S.form.dia) return;
+  if (P.m + P.t) { clearTimeout(P.timer); await enviarPendientes(); }
+  S.form.dia = d;
+  renderMozo();
+}
+
+async function deshacer(id, total){
+  if (P.m + P.t) { toast('Esperá a que se guarde y probá de nuevo'); return; }
+  if (!confirm(`¿Deshacer la última carga de ${total} ${total===1?'vino':'vinos'}?`)) return;
+  try { await api('anularMia', { id }); toast('Listo, se descontó', 'ok'); await refrescar(); }
+  catch(e) { toast(e.message, 'err'); }
+}
+
+window.addEventListener('beforeunload', e => { if (P.m + P.t) { e.preventDefault(); e.returnValue = ''; } });
+
 /* ---------------- vista MOZO ---------------- */
 function renderMozo(){
   const d = S.data, q = d.quincena, mio = d.mio;
@@ -457,7 +570,7 @@ function renderMozo(){
     </li>`).join('') + '</ul>' : '<div class="vacio">Todavía no cargaste ventas.</div>';
 
   $('#main').innerHTML = `
-    ${bloqueCargar(false)}
+    ${bloqueBotones()}
     <div class="card">
       <h3>Tu quincena ${d.puesto && mio.total > 0 ? `<span class="pill vino">Puesto ${d.puesto}</span>` : ''}</h3>
       <div class="mi-row">
