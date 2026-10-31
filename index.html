@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#5c1624">
+<title>Vinos Güemesiana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --vino:#5c1624; --vino-2:#7d2333; --vino-claro:#f6e9eb;
+  --oro:#c99a3b; --oro-claro:#f8efdc;
+  --torrontes:#d4b348; --malbec:#6b1a2a;
+  --fondo:#f7f2ea; --papel:#fffdf9; --tinta:#2b1d1a; --gris:#7b6d66; --linea:#e8ded2;
+  --ok:#2f7d4f; --ok-claro:#e3f2e8; --error:#b3261e;
+  --radio:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--fondo);color:var(--tinta);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;margin:0;letter-spacing:-.01em}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.oculto{display:none!important}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 48px}
+
+/* ---------- login ---------- */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:radial-gradient(120% 80% at 50% 0%,#7d2333 0%,#5c1624 45%,#3a0d17 100%)}
+.login-card{width:100%;max-width:380px;background:var(--papel);border-radius:22px;padding:30px 24px 26px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.marca{text-align:center;margin-bottom:22px}
+.marca .copa{font-size:34px}
+.marca h1{font-size:28px;color:var(--vino);margin-top:4px}
+.marca p{margin:4px 0 0;color:var(--gris);font-size:14px}
+label{display:block;font-size:13px;font-weight:600;color:var(--gris);margin:14px 0 6px}
+.input{width:100%;padding:13px 14px;border:1.5px solid var(--linea);border-radius:12px;background:#fff;outline:none;transition:border-color .15s}
+.input:focus{border-color:var(--vino-2)}
+.ayuda{font-size:12.5px;color:var(--gris);margin-top:14px;text-align:center}
+
+/* ---------- botones ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:13px 18px;font-weight:600;background:var(--vino);color:#fff;transition:transform .05s,opacity .15s}
+.btn:active{transform:scale(.98)}
+.btn[disabled]{opacity:.55;pointer-events:none}
+.btn.full{width:100%;margin-top:20px}
+.btn.sec{background:var(--vino-claro);color:var(--vino)}
+.btn.chico{padding:8px 12px;font-size:13px;border-radius:10px}
+.btn.fantasma{background:transparent;color:var(--vino);padding:8px 10px}
+.btn.peligro{background:#fbe9e7;color:var(--error)}
+
+/* ---------- header ---------- */
+.top{background:linear-gradient(160deg,#7d2333,#5c1624 60%,#430f1b);color:#fff;padding:18px 0 64px}
+.top .wrap{padding-bottom:0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.top .hola{font-size:13px;opacity:.8}
+.top h2{font-size:24px;margin-top:2px}
+.top .q{font-size:13px;opacity:.85;margin-top:4px}
+.top-acc{display:flex;gap:6px;flex-shrink:0}
+.top-acc button{background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:10px;padding:8px 10px;font-size:12.5px;font-weight:600}
+main.wrap{margin-top:-48px}
+
+/* ---------- tarjetas ---------- */
+.card{background:var(--papel);border-radius:var(--radio);padding:18px;margin-bottom:14px;box-shadow:0 1px 2px rgba(60,30,20,.06),0 6px 20px rgba(60,30,20,.06)}
+.card h3{font-size:18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card h3 small{font-family:Inter,sans-serif;font-size:12.5px;font-weight:500;color:var(--gris)}
+.premio{background:linear-gradient(135deg,#fff8e8,#f8efdc);border:1px solid #ecd9ae}
+.premio .monto{font-family:Fraunces,serif;font-size:30px;font-weight:800;color:#8a6312;line-height:1}
+.premio .estado{margin-top:10px;font-size:14.5px}
+.premio .meta{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:#7a5d24}
+.pill{display:inline-flex;align-items:center;gap:4px;background:rgba(201,154,59,.18);color:#7a5d24;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:600}
+.pill.ok{background:var(--ok-claro);color:var(--ok)}
+.pill.vino{background:var(--vino-claro);color:var(--vino)}
+.pill.gris{background:#efe9e3;color:var(--gris)}
+
+.grande{font-family:Fraunces,serif;font-size:44px;font-weight:800;line-height:1;color:var(--vino)}
+.mi-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.cepas{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.cepa{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--gris)}
+.punto{width:10px;height:10px;border-radius:50%;display:inline-block}
+.barra{height:10px;background:#efe6dc;border-radius:999px;overflow:hidden;margin-top:14px;position:relative}
+.barra > i{display:block;height:100%;background:linear-gradient(90deg,var(--vino-2),var(--vino));border-radius:999px;transition:width .5s}
+.barra .marca-piso{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--oro)}
+.barra-leyenda{display:flex;justify-content:space-between;font-size:12px;color:var(--gris);margin-top:6px}
+
+/* ---------- cargar ---------- */
+.seg{display:flex;background:#f1e9df;border-radius:12px;padding:4px;gap:4px}
+.seg button{flex:1;border:0;background:transparent;padding:9px 6px;border-radius:9px;font-weight:600;font-size:13.5px;color:var(--gris)}
+.seg button.on{background:#fff;color:var(--vino);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.stepper{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--linea)}
+.stepper:last-of-type{border-bottom:0}
+.stepper .nom{display:flex;align-items:center;gap:10px;font-weight:600}
+.stepper .nom .botella{width:12px;height:30px;border-radius:4px 4px 3px 3px;position:relative}
+.stepper .nom .botella:before{content:"";position:absolute;left:3px;top:-8px;width:6px;height:10px;border-radius:2px;background:inherit}
+.ctrl{display:flex;align-items:center;gap:6px}
+.ctrl button{width:44px;height:44px;border-radius:12px;border:1.5px solid var(--linea);background:#fff;font-size:22px;font-weight:600;color:var(--vino);display:flex;align-items:center;justify-content:center}
+.ctrl input{width:56px;text-align:center;font-size:22px;font-weight:700;border:0;background:transparent;outline:none;-moz-appearance:textfield}
+.ctrl input::-webkit-outer-spin-button,.ctrl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+/* ---------- ranking ---------- */
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex-shrink:0;border:1.5px solid var(--linea);background:#fff;border-radius:999px;padding:7px 13px;font-size:13px;font-weight:600;color:var(--gris)}
+.tabs button.on{background:var(--vino);border-color:var(--vino);color:#fff}
+.rk{list-style:none;margin:0;padding:0}
+.rk li{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--linea)}
+.rk li:last-child{border-bottom:0}
+.rk li.yo{background:var(--vino-claro);border-radius:12px;border-bottom-color:transparent;padding-left:8px;padding-right:8px}
+.pos{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;background:#f1e9df;color:var(--gris)}
+.pos.p1{background:#f3d98b;color:#6f4f0c}.pos.p2{background:#e2e2e2;color:#555}.pos.p3{background:#ecc9a6;color:#7a4a1c}
+.rk .n{font-weight:600;min-width:0}
+.rk .n .sub{display:block;font-size:12px;font-weight:500;color:var(--gris);margin-top:1px}
+.rk .mini{height:5px;background:#efe6dc;border-radius:99px;margin-top:5px;overflow:hidden}
+.rk .mini i{display:block;height:100%;background:var(--vino-2);border-radius:99px}
+.rk .t{font-family:Fraunces,serif;font-size:22px;font-weight:800;color:var(--vino);text-align:right;line-height:1}
+.rk .t small{display:block;font-family:Inter,sans-serif;font-size:11px;font-weight:500;color:var(--gris);margin-top:3px}
+.vacio{color:var(--gris);text-align:center;padding:16px 0;font-size:14px}
+
+/* ---------- listas ---------- */
+.lista{list-style:none;margin:0;padding:0}
+.lista li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--linea)}
+.lista li:last-child{border-bottom:0}
+.lista .det{font-size:12.5px;color:var(--gris)}
+
+/* ---------- admin ---------- */
+.nav{display:flex;gap:4px;background:var(--papel);border-radius:14px;padding:5px;margin-bottom:14px;overflow-x:auto;box-shadow:0 6px 20px rgba(60,30,20,.08);scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav button{flex:1 0 auto;border:0;background:transparent;padding:10px 12px;border-radius:10px;font-weight:600;font-size:13.5px;color:var(--gris);white-space:nowrap}
+.nav button.on{background:var(--vino);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+@media(min-width:620px){.kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:var(--papel);border-radius:14px;padding:14px;box-shadow:0 6px 20px rgba(60,30,20,.06)}
+.kpi .l{font-size:12px;color:var(--gris);font-weight:600}
+.kpi .v{font-family:Fraunces,serif;font-size:28px;font-weight:800;color:var(--vino);margin-top:4px;line-height:1.1}
+.kpi .v small{font-family:Inter,sans-serif;font-size:13px;color:var(--gris);font-weight:500}
+.filtros{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.filtros .full{grid-column:1/-1}
+.filtros label{margin:0 0 5px}
+.check{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--gris);margin-top:10px}
+.tabla-wrap{overflow-x:auto;margin:0 -18px;padding:0 18px}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
+th{text-align:left;font-size:12px;color:var(--gris);font-weight:600;padding:8px 6px;border-bottom:1.5px solid var(--linea);white-space:nowrap}
+td{padding:9px 6px;border-bottom:1px solid var(--linea);vertical-align:middle}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tr.anulada td{color:#b0a49d;text-decoration:line-through}
+tr.anulada td.acc{text-decoration:none}
+.acc{white-space:nowrap;text-align:right}
+.totales{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:13.5px}
+.totales b{color:var(--vino)}
+.fila-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+/* ---------- modal y toast ---------- */
+.modal-fondo{position:fixed;inset:0;background:rgba(30,10,12,.5);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding:16px}
+@media(min-width:620px){.modal-fondo{align-items:center}}
+.modal{background:var(--papel);border-radius:20px;padding:22px 20px;width:100%;max-width:420px;max-height:90vh;overflow:auto}
+.modal h3{font-size:20px;margin-bottom:6px}
+.modal .acciones{display:flex;gap:8px;margin-top:20px}
+.modal .acciones .btn{flex:1}
+.clave-box{font-family:ui-monospace,Menlo,monospace;font-size:22px;letter-spacing:.08em;background:var(--oro-claro);border-radius:12px;padding:14px;text-align:center;margin-top:12px;user-select:all}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);opacity:0;background:var(--tinta);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;font-size:14px;z-index:60;transition:all .25s;max-width:calc(100% - 32px);text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.err{background:var(--error)}
+#toast.ok{background:var(--ok)}
+.cargando{text-align:center;padding:60px 0;color:var(--gris)}
+.spin{width:28px;height:28px;border:3px solid var(--linea);border-top-color:var(--vino);border-radius:50%;animation:g 0.8s linear infinite;margin:0 auto 10px}
+@keyframes g{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<section id="login">
+  <form class="login-card" id="formLogin" autocomplete="on">
+    <div class="marca">
+      <div class="copa">🍷</div>
+      <h1>Vinos Güemesiana</h1>
+      <p>La Güemesiana Wines · Malbec y Torrontés</p>
+    </div>
+    <label for="lUsuario">Usuario</label>
+    <input class="input" id="lUsuario" name="username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ej: nicolas.zenteno" required>
+    <label for="lClave">Contraseña</label>
+    <input class="input" id="lClave" name="password" type="password" autocomplete="current-password" required>
+    <button class="btn full" id="bLogin" type="submit">Entrar</button>
+    <p class="ayuda">¿Te olvidaste la contraseña? Pedile una nueva a un administrador.</p>
+  </form>
+</section>
+
+<!-- ================= APP ================= -->
+<section id="app" class="oculto">
+  <header class="top">
+    <div class="wrap">
+      <div>
+        <div class="hola" id="tHola">Hola</div>
+        <h2 id="tNombre"></h2>
+        <div class="q" id="tQuincena"></div>
+      </div>
+      <div class="top-acc">
+        <button onclick="modalClave()">Contraseña</button>
+        <button onclick="salir()">Salir</button>
+      </div>
+    </div>
+  </header>
+  <main class="wrap" id="main">
+    <div class="card cargando"><div class="spin"></div>Cargando…</div>
+  </main>
+</section>
+
+<div id="toast"></div>
+
+<script>
+/* ================================================================
+   CONFIGURACIÓN: pegá acá la URL de tu Apps Script (termina en /exec)
+   ================================================================ */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxE1UnnoMWNIBysMJ969c4Na2SbO16nYQK4__mZKvkOBIz18MsqnSaRakNuQ8CNeA7zcg/exec';
+
+/* ---------------- estado ---------------- */
+const S = {
+  token: leer('vg_token'),
+  data: null,
+  periodo: 'quincena',
+  rankingCache: {},
+  form: { dia: 'hoy', fecha: null, m: 0, t: 0, usuario: '' },
+  tab: 'resumen',
+  usuarios: null,
+  ventas: null,
+  filtro: null,
+};
+
+/* ---------------- utilidades ---------------- */
+function leer(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function guardar(k,v){ try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k,v); } catch(e){} }
+const $ = s => document.querySelector(s);
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const fmt = n => Number(n || 0).toLocaleString('es-AR');
+const DIAS = ['dom','lun','mar','mié','jue','vie','sáb'];
+function fFecha(iso){ if(!iso) return ''; const d = new Date(iso+'T12:00:00Z'); return DIAS[d.getUTCDay()] + ' ' + iso.slice(8,10) + '/' + iso.slice(5,7); }
+function sumarDias(iso,n){ const d = new Date(iso+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+
+let toastT;
+function toast(msg, tipo){
+  const t = $('#toast'); t.textContent = msg; t.className = 'on ' + (tipo || '');
+  clearTimeout(toastT); toastT = setTimeout(() => t.className = '', 2800);
+}
+
+async function api(accion, datos){
+  if (API_URL.indexOf('http') !== 0) throw new Error('Falta pegar la URL de Apps Script en el código.');
+  let r;
+  try {
+    r = await fetch(API_URL, { method: 'POST', body: JSON.stringify(Object.assign({ accion, token: S.token }, datos || {})) });
+  } catch(e) { throw new Error('Sin conexión. Revisá internet y probá de nuevo.'); }
+  const j = await r.json();
+  if (!j.ok) {
+    if (j.sesion === false) { cerrarLocal(); }
+    throw new Error(j.error || 'Algo salió mal');
+  }
+  return j;
+}
+
+async function conBoton(btn, fn){
+  const txt = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = 'Guardando…'; }
+  try { await fn(); }
+  catch(e) { toast(e.message, 'err'); }
+  finally { if (btn) { btn.disabled = false; btn.innerHTML = txt; } }
+}
+
+/* ---------------- login ---------------- */
+$('#formLogin').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const b = $('#bLogin'); b.disabled = true; b.textContent = 'Entrando…';
+  try {
+    const r = await api('login', { usuario: $('#lUsuario').value, clave: $('#lClave').value });
+    S.token = r.token; guardar('vg_token', r.token);
+    $('#lClave').value = '';
+    await iniciar();
+  } catch(e) { toast(e.message, 'err'); }
+  finally { b.disabled = false; b.textContent = 'Entrar'; }
+});
+
+function cerrarLocal(){
+  S.token = null; S.data = null; S.usuarios = null; S.ventas = null; S.rankingCache = {};
+  guardar('vg_token', null);
+  $('#app').classList.add('oculto'); $('#login').classList.remove('oculto');
+}
+async function salir(){
+  try { await api('logout'); } catch(e) {}
+  cerrarLocal();
+}
+
+async function iniciar(){
+  $('#login').classList.add('oculto'); $('#app').classList.remove('oculto');
+  try {
+    await refrescar();
+  } catch(e) {
+    toast(e.message, 'err');
+    if (!S.token) return;
+    $('#main').innerHTML = `<div class="card vacio">${esc(e.message)}<br><br><button class="btn sec chico" onclick="iniciar()">Reintentar</button></div>`;
+  }
+}
+
+async function refrescar(){
+  S.data = await api('inicio');
+  S.rankingCache = {};
+  const d = S.data;
+  $('#tHola').textContent = d.yo.rol === 'admin' ? 'Panel de administración' : 'Hola,';
+  $('#tNombre').textContent = d.yo.nombre;
+  $('#tQuincena').textContent = cap(d.quincena.quincena.etiqueta) + ' · ' + (d.quincena.diasRestantes === 1 ? 'último día' : 'quedan ' + d.quincena.diasRestantes + ' días');
+  if (!S.form.fecha) S.form.fecha = d.hoy;
+  d.yo.rol === 'admin' ? renderAdmin() : renderMozo();
+}
+const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+
+/* ---------------- bloques compartidos ---------------- */
+function bloquePremio(q){
+  let estado;
+  if (!q.lider) estado = 'Todavía no hay ventas cargadas esta quincena. ¡Arrancá vos!';
+  else if (q.premioDesbloqueado) estado = `🏆 <b>${esc(q.lider)}</b> ${q.empate ? 'van empatando' : 'va ganando'} con <b>${fmt(q.ranking[0].total)}</b> vinos.`;
+  else estado = `Va primero <b>${esc(q.lider)}</b> con ${fmt(q.ranking[0].total)} vinos, pero nadie llegó todavía al mínimo de <b>${fmt(q.piso)}</b> para ganar el premio.`;
+  return `
+  <div class="card premio">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+      <div>
+        <div style="font-size:12.5px;font-weight:600;color:#7a5d24;margin-bottom:6px">PREMIO DE LA QUINCENA</div>
+        <div class="monto">$${fmt(q.premio)}</div>
+      </div>
+      <span class="pill">${q.diasRestantes === 1 ? 'Último día' : q.diasRestantes + ' días'}</span>
+    </div>
+    <div class="estado">${estado}</div>
+    <div class="meta">
+      <span>🎯 Objetivo por mozo: <b>${fmt(q.objetivoPorMozo)}</b></span>
+      <span>✅ Mínimo para el premio: <b>${fmt(q.piso)}</b></span>
+    </div>
+  </div>`;
+}
+
+function bloqueRanking(){
+  const tabs = [['hoy','Hoy'],['2dias','Últimos 2 días'],['3dias','Últimos 3 días'],['semana','Semana'],['quincena','Quincena']];
+  return `
+  <div class="card">
+    <h3>Ranking</h3>
+    <div class="tabs">${tabs.map(([k,l]) => `<button class="${S.periodo===k?'on':''}" onclick="cambiarPeriodo('${k}')">${l}</button>`).join('')}</div>
+    <div id="rkLista">${listaRanking(S.periodo === 'quincena' ? S.data.quincena.ranking : (S.rankingCache[S.periodo] || null))}</div>
+  </div>`;
+}
+
+function listaRanking(lista){
+  if (!lista) return '<div class="vacio"><div class="spin"></div></div>';
+  const conVentas = lista.filter(x => x.total > 0);
+  if (!conVentas.length) return '<div class="vacio">Sin ventas cargadas en este período.</div>';
+  const max = Math.max(1, ...lista.map(x => x.total));
+  const admin = S.data.yo.rol === 'admin';
+  return '<ol class="rk">' + lista.map((x,i) => {
+    const pos = x.total > 0 ? i + 1 : '–';
+    const yo = x.esYo || x.usuario === S.data.yo.usuario;
+    let sub = '';
+    if (admin || yo) sub = `<span class="sub">Malbec ${fmt(x.malbec)} · Torrontés ${fmt(x.torrontes)}</span>`;
+    let extra = '';
+    if (x.avance !== undefined && S.periodo === 'quincena') extra = `<small>${x.avance}%${x.llegaAlPiso ? ' ✓' : ''}</small>`;
+    return `<li class="${yo && !admin ? 'yo' : ''}">
+      <div class="pos ${pos===1?'p1':pos===2?'p2':pos===3?'p3':''}">${pos}</div>
+      <div class="n">${esc(x.nombre)}${yo && !admin ? ' <span class="pill vino">vos</span>' : ''}${sub}<div class="mini"><i style="width:${Math.round(x.total/max*100)}%"></i></div></div>
+      <div class="t">${fmt(x.total)}${extra}</div>
+    </li>`;
+  }).join('') + '</ol>';
+}
+
+async function cambiarPeriodo(p){
+  S.periodo = p;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.getAttribute('onclick').indexOf("'"+p+"'") >= 0));
+  if (p === 'quincena') { $('#rkLista').innerHTML = listaRanking(S.data.quincena.ranking); return; }
+  if (S.rankingCache[p]) { $('#rkLista').innerHTML = listaRanking(S.rankingCache[p]); return; }
+  $('#rkLista').innerHTML = listaRanking(null);
+  try {
+    const r = await api('ranking', { periodo: p });
+    S.rankingCache[p] = r.ranking;
+    if (S.periodo === p) $('#rkLista').innerHTML = listaRanking(r.ranking);
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+function bloqueCargar(esAdmin){
+  const f = S.form, hoy = S.data.hoy;
+  let selector;
+  if (esAdmin) {
+    const mozos = (S.usuarios || []).filter(u => u.rol === 'mozo' && u.activo);
+    selector = `
+      <label for="cMozo" style="margin-top:0">Mozo</label>
+      <select class="input" id="cMozo" onchange="S.form.usuario=this.value">
+        <option value="">Elegí un mozo…</option>
+        ${mozos.map(u => `<option value="${esc(u.usuario)}" ${f.usuario===u.usuario?'selected':''}>${esc(u.nombre)}</option>`).join('')}
+      </select>
+      <label for="cFecha">Fecha</label>
+      <input class="input" type="date" id="cFecha" value="${f.fecha || hoy}" max="${hoy}" onchange="S.form.fecha=this.value">`;
+  } else {
+    selector = `<div class="seg">
+      <button class="${f.dia==='hoy'?'on':''}" onclick="elegirDia('hoy')">Hoy · ${fFecha(hoy)}</button>
+      <button class="${f.dia==='ayer'?'on':''}" onclick="elegirDia('ayer')">Ayer · ${fFecha(sumarDias(hoy,-1))}</button>
+    </div>`;
+  }
+  return `
+  <div class="card">
+    <h3>${esAdmin ? 'Cargar venta para un mozo' : 'Cargar vinos vendidos'}</h3>
+    ${selector}
+    <div style="margin-top:6px">
+      ${stepper('m','Malbec','var(--malbec)')}
+      ${stepper('t','Torrontés','var(--torrontes)')}
+    </div>
+    <button class="btn full" style="margin-top:12px" onclick="guardarVenta(this, ${esAdmin})">Guardar</button>
+  </div>`;
+}
+
+function stepper(k, nombre, color){
+  return `<div class="stepper">
+    <div class="nom"><span class="botella" style="background:${color}"></span>${nombre}</div>
+    <div class="ctrl">
+      <button onclick="paso('${k}',-1)" aria-label="Restar ${nombre}">−</button>
+      <input id="st_${k}" type="number" inputmode="numeric" min="0" max="300" value="${S.form[k]}" oninput="S.form['${k}']=Math.max(0,parseInt(this.value)||0)">
+      <button onclick="paso('${k}',1)" aria-label="Sumar ${nombre}">+</button>
+    </div>
+  </div>`;
+}
+function paso(k, d){ S.form[k] = Math.max(0, Math.min(300, (S.form[k]||0) + d)); $('#st_'+k).value = S.form[k]; }
+function elegirDia(d){
+  S.form.dia = d;
+  document.querySelectorAll('.seg button').forEach((b,i) => b.classList.toggle('on', (i===0) === (d==='hoy')));
+}
+
+async function guardarVenta(btn, esAdmin){
+  const f = S.form;
+  const total = (f.m||0) + (f.t||0);
+  if (!total) { toast('Sumá al menos un vino', 'err'); return; }
+  const datos = { malbec: f.m, torrontes: f.t };
+  if (esAdmin) {
+    if (!f.usuario) { toast('Elegí el mozo', 'err'); return; }
+    datos.usuario = f.usuario; datos.fecha = f.fecha || S.data.hoy;
+  } else {
+    datos.fecha = f.dia === 'ayer' ? sumarDias(S.data.hoy, -1) : S.data.hoy;
+  }
+  await conBoton(btn, async () => {
+    await api('cargar', datos);
+    toast(`¡Listo! +${total} ${total === 1 ? 'vino' : 'vinos'} 🍷`, 'ok');
+    S.form.m = 0; S.form.t = 0;
+    await refrescar();
+  });
+}
+
+/* ---------------- vista MOZO ---------------- */
+function renderMozo(){
+  const d = S.data, q = d.quincena, mio = d.mio;
+  const obj = Math.max(1, q.objetivoPorMozo);
+  const pct = Math.min(100, Math.round(mio.total / obj * 100));
+  const pisoPct = Math.min(100, Math.round(q.piso / obj * 100));
+  const faltan = Math.max(0, q.piso - mio.total);
+
+  const cargas = d.misCargas.length ? '<ul class="lista">' + d.misCargas.map(c => `
+    <li>
+      <div><b>${fmt(c.total)} ${c.total===1?'vino':'vinos'}</b> <span class="det">· ${fFecha(c.fecha)}</span>
+        <div class="det">Malbec ${c.malbec} · Torrontés ${c.torrontes}</div></div>
+      ${c.anulable ? `<button class="btn fantasma chico" onclick="anularMia('${esc(c.id)}')">Anular</button>` : ''}
+    </li>`).join('') + '</ul>' : '<div class="vacio">Todavía no cargaste ventas.</div>';
+
+  $('#main').innerHTML = `
+    ${bloqueCargar(false)}
+    <div class="card">
+      <h3>Tu quincena ${d.puesto && mio.total > 0 ? `<span class="pill vino">Puesto ${d.puesto}</span>` : ''}</h3>
+      <div class="mi-row">
+        <div><div class="grande">${fmt(mio.total)}</div><div class="det" style="color:var(--gris);font-size:13px;margin-top:4px">vinos vendidos · hoy ${fmt(d.miHoy)}</div></div>
+        <div style="text-align:right">${mio.total >= q.piso ? '<span class="pill ok">✓ Llegaste al mínimo</span>' : `<span class="pill">Te faltan ${fmt(faltan)} para el mínimo</span>`}</div>
+      </div>
+      <div class="cepas">
+        <span class="cepa"><span class="punto" style="background:var(--malbec)"></span>Malbec ${fmt(mio.malbec)}</span>
+        <span class="cepa"><span class="punto" style="background:var(--torrontes)"></span>Torrontés ${fmt(mio.torrontes)}</span>
+      </div>
+      <div class="barra"><i style="width:${pct}%"></i><span class="marca-piso" style="left:${pisoPct}%"></span></div>
+      <div class="barra-leyenda"><span>${pct}% de tu objetivo</span><span>Objetivo: ${fmt(q.objetivoPorMozo)}</span></div>
+    </div>
+    ${bloquePremio(q)}
+    ${bloqueRanking()}
+    <div class="card"><h3>Tus últimas cargas <small>podés anular hasta 24 h después</small></h3>${cargas}</div>
+  `;
+}
+
+async function anularMia(id){
+  if (!confirm('¿Anular esta carga?')) return;
+  try { await api('anularMia', { id }); toast('Carga anulada', 'ok'); await refrescar(); }
+  catch(e) { toast(e.message, 'err'); }
+}
+
+/* ---------------- vista ADMIN ---------------- */
+async function renderAdmin(){
+  if (!S.usuarios) { try { S.usuarios = (await api('usuarios')).usuarios; } catch(e) { S.usuarios = []; } }
+  const tabs = [['resumen','Resumen'],['ventas','Ventas'],['cargar','Cargar'],['equipo','Equipo'],['ajustes','Ajustes']];
+  $('#main').innerHTML = `
+    <nav class="nav">${tabs.map(([k,l]) => `<button class="${S.tab===k?'on':''}" onclick="irTab('${k}')">${l}</button>`).join('')}</nav>
+    <div id="panel"></div>`;
+  pintarTab();
+}
+function irTab(t){ S.tab = t; document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('on', b.getAttribute('onclick').indexOf("'"+t+"'") >= 0)); pintarTab(); }
+
+function pintarTab(){
+  const p = $('#panel');
+  if (S.tab === 'resumen') p.innerHTML = tabResumen();
+  if (S.tab === 'cargar') p.innerHTML = bloqueCargar(true);
+  if (S.tab === 'ventas') { p.innerHTML = tabVentas(); buscarVentas(); }
+  if (S.tab === 'equipo') p.innerHTML = tabEquipo();
+  if (S.tab === 'ajustes') p.innerHTML = tabAjustes();
+}
+
+function tabResumen(){
+  const q = S.data.quincena;
+  const pctEq = Math.min(100, q.avanceEquipo);
+  return `
+    <div class="kpis">
+      <div class="kpi"><div class="l">Vendidos (equipo)</div><div class="v">${fmt(q.equipo)} <small>/ ${fmt(q.objetivo)}</small></div></div>
+      <div class="kpi"><div class="l">Avance del equipo</div><div class="v">${q.avanceEquipo}%</div></div>
+      <div class="kpi"><div class="l">Objetivo por mozo</div><div class="v">${fmt(q.objetivoPorMozo)}</div></div>
+      <div class="kpi"><div class="l">Mínimo para premio</div><div class="v">${fmt(q.piso)}</div></div>
+    </div>
+    <div class="card">
+      <h3>Objetivo de la quincena <small>${esc(cap(q.quincena.etiqueta))}</small></h3>
+      <div class="barra" style="margin-top:4px"><i style="width:${pctEq}%"></i></div>
+      <div class="barra-leyenda"><span>${fmt(q.equipo)} vendidos</span><span>Faltan ${fmt(Math.max(0, q.objetivo - q.equipo))}</span></div>
+    </div>
+    ${bloquePremio(q)}
+    ${bloqueRanking()}
+    <div class="card">
+      <h3>Ganadores por quincena</h3>
+      <div id="hist"><button class="btn sec chico" onclick="verHistorial(this)">Ver historial</button></div>
+    </div>`;
+}
+
+async function verHistorial(btn){
+  btn.disabled = true; btn.textContent = 'Cargando…';
+  try {
+    const r = await api('historial');
+    $('#hist').innerHTML = r.historial.length ? '<ul class="lista">' + r.historial.map(h => {
+      let res;
+      if (!h.lider) res = '<span class="pill gris">Sin ventas</span>';
+      else if (h.premioDesbloqueado) res = `<span class="pill ok">🏆 ${esc(h.lider)}</span>`;
+      else res = `<span class="pill gris">${h.cerrada ? 'Desierto' : 'Sin ganador aún'}</span>`;
+      return `<li><div><b>${esc(cap(h.etiqueta))}</b>${h.cerrada ? '' : ' <span class="pill vino">en curso</span>'}
+        <div class="det">Equipo ${fmt(h.equipo)} / ${fmt(h.objetivo)} · líder ${fmt(h.liderTotal)} (mínimo ${fmt(h.piso)})</div></div>${res}</li>`;
+    }).join('') + '</ul>' : '<div class="vacio">Todavía no hay quincenas con ventas.</div>';
+  } catch(e) { toast(e.message, 'err'); btn.disabled = false; btn.textContent = 'Ver historial'; }
+}
+
+/* ----- ventas ----- */
+function tabVentas(){
+  const q = S.data.quincena.quincena;
+  if (!S.filtro) S.filtro = { desde: q.desde, hasta: q.hasta, usuario: '', anuladas: false };
+  const f = S.filtro;
+  const mozos = (S.usuarios || []).filter(u => u.rol === 'mozo');
+  return `
+    <div class="card">
+      <h3>Registro de ventas</h3>
+      <div class="filtros">
+        <div><label for="fDesde">Desde</label><input class="input" type="date" id="fDesde" value="${f.desde}"></div>
+        <div><label for="fHasta">Hasta</label><input class="input" type="date" id="fHasta" value="${f.hasta}"></div>
+        <div class="full"><label for="fMozo">Mozo</label>
+          <select class="input" id="fMozo"><option value="">Todos</option>
+          ${mozos.map(u => `<option value="${esc(u.usuario)}" ${f.usuario===u.usuario?'selected':''}>${esc(u.nombre)}</option>`).join('')}</select></div>
+      </div>
+      <label class="check"><input type="checkbox" id="fAnul" ${f.anuladas?'checked':''}> Mostrar también las anuladas</label>
+      <div class="fila-acc">
+        <button class="btn chico" onclick="aplicarFiltro()">Buscar</button>
+        <button class="btn sec chico" onclick="atajoFiltro('quincena')">Esta quincena</button>
+        <button class="btn sec chico" onclick="atajoFiltro('mes')">Este mes</button>
+        <button class="btn sec chico" onclick="exportarCSV()">Descargar CSV</button>
+      </div>
+    </div>
+    <div class="card" id="vRes"><div class="vacio"><div class="spin"></div></div></div>`;
+}
+function aplicarFiltro(){
+  S.filtro = { desde: $('#fDesde').value, hasta: $('#fHasta').value, usuario: $('#fMozo').value, anuladas: $('#fAnul').checked };
+  buscarVentas();
+}
+function atajoFiltro(t){
+  const h = S.data.hoy, q = S.data.quincena.quincena;
+  S.filtro.desde = t === 'mes' ? h.slice(0,8) + '01' : q.desde;
+  const finMes = () => { const [y,m] = h.split('-').map(Number); return h.slice(0,8) + String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2,'0'); };
+  S.filtro.hasta = t === 'mes' ? finMes() : q.hasta;
+  $('#fDesde').value = S.filtro.desde; $('#fHasta').value = S.filtro.hasta;
+  aplicarFiltro();
+}
+async function buscarVentas(){
+  const f = S.filtro;
+  $('#vRes').innerHTML = '<div class="vacio"><div class="spin"></div></div>';
+  try {
+    const r = await api('ventas', { desde: f.desde, hasta: f.hasta, usuario: f.usuario, incluirAnuladas: f.anuladas });
+    S.ventas = r.ventas;
+    if (!r.ventas.length) { $('#vRes').innerHTML = '<div class="vacio">No hay ventas en ese período.</div>'; return; }
+    $('#vRes').innerHTML = `
+      <h3>${fmt(r.ventas.length)} cargas <small>${fFecha(r.desde)} al ${fFecha(r.hasta)}</small></h3>
+      <div class="tabla-wrap"><table>
+        <thead><tr><th>Fecha</th><th>Mozo</th><th class="num">Malbec</th><th class="num">Torr.</th><th class="num">Total</th><th>Cargado</th><th></th></tr></thead>
+        <tbody>${r.ventas.map(v => `
+          <tr class="${v.estado==='anulada'?'anulada':''}" title="${esc(v.modificado)}">
+            <td>${fFecha(v.fecha)}</td><td>${esc(v.nombre)}</td>
+            <td class="num">${v.malbec}</td><td class="num">${v.torrontes}</td><td class="num"><b>${v.total}</b></td>
+            <td class="det">${esc(v.cargado)}${v.cargadoPor !== v.usuario ? ' · admin' : ''}${v.modificado ? ' · ✎' : ''}</td>
+            <td class="acc">${v.estado==='anulada' ? '<span class="pill gris">anulada</span>' : `
+              <button class="btn fantasma chico" onclick="editarVenta('${esc(v.id)}')">Editar</button>
+              <button class="btn fantasma chico" style="color:var(--error)" onclick="anularVenta('${esc(v.id)}')">Anular</button>`}</td>
+          </tr>`).join('')}</tbody>
+      </table></div>
+      <div class="totales"><span>Malbec <b>${fmt(r.totales.malbec)}</b></span><span>Torrontés <b>${fmt(r.totales.torrontes)}</b></span><span>Total <b>${fmt(r.totales.total)}</b></span></div>`;
+  } catch(e) { $('#vRes').innerHTML = `<div class="vacio">${esc(e.message)}</div>`; }
+}
+
+function editarVenta(id){
+  const v = S.ventas.find(x => x.id === id); if (!v) return;
+  modal(`
+    <h3>Editar carga</h3>
+    <div class="det" style="color:var(--gris)">${esc(v.nombre)} · cargado ${esc(v.cargado)}</div>
+    <label for="eFecha">Fecha</label><input class="input" type="date" id="eFecha" value="${v.fecha}" max="${S.data.hoy}">
+    <div class="filtros" style="margin-top:4px">
+      <div><label for="eM">Malbec</label><input class="input" type="number" min="0" max="300" id="eM" value="${v.malbec}"></div>
+      <div><label for="eT">Torrontés</label><input class="input" type="number" min="0" max="300" id="eT" value="${v.torrontes}"></div>
+    </div>
+    <p class="det" style="color:var(--gris);font-size:12.5px;margin-top:12px">El cambio queda registrado en la planilla con tu nombre y los valores anteriores.</p>
+    <div class="acciones"><button class="btn sec" onclick="cerrarModal()">Cancelar</button><button class="btn" id="eOk">Guardar</button></div>`);
+  $('#eOk').onclick = e => conBoton(e.currentTarget, async () => {
+    await api('editarVenta', { id, fecha: $('#eFecha').value, malbec: $('#eM').value, torrontes: $('#eT').value });
+    cerrarModal(); toast('Carga editada', 'ok'); await refrescarAdmin();
+  });
+}
+async function anularVenta(id){
+  if (!confirm('¿Anular esta carga? Va a quedar registrada como anulada.')) return;
+  try { await api('anularVenta', { id }); toast('Carga anulada', 'ok'); await refrescarAdmin(); }
+  catch(e) { toast(e.message, 'err'); }
+}
+async function refrescarAdmin(){
+  S.data = await api('inicio'); S.rankingCache = {};
+  if (S.tab === 'ventas') buscarVentas(); else pintarTab();
+}
+
+function exportarCSV(){
+  if (!S.ventas || !S.ventas.length) { toast('No hay ventas para descargar', 'err'); return; }
+  const filas = [['Fecha','Mozo','Usuario','Malbec','Torrontés','Total','Cargado','Estado','Cambios']]
+    .concat(S.ventas.map(v => [v.fecha, v.nombre, v.usuario, v.malbec, v.torrontes, v.total, v.cargado, v.estado, v.modificado]));
+  const csv = '﻿' + filas.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(';')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `ventas-vinos_${S.filtro.desde}_${S.filtro.hasta}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ----- equipo ----- */
+function tabEquipo(){
+  const us = S.usuarios || [];
+  const fila = u => `
+    <li>
+      <div><b style="${u.activo?'':'color:var(--gris)'}">${esc(u.nombre)}</b> ${u.rol==='admin'?'<span class="pill vino">admin</span>':''} ${u.activo?'':'<span class="pill gris">inactivo</span>'}
+        <div class="det">usuario: ${esc(u.usuario)}</div></div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
+        <button class="btn fantasma chico" onclick="nuevaClave('${esc(u.usuario)}','${esc(u.nombre)}')">Nueva clave</button>
+        ${u.usuario !== S.data.yo.usuario ? `<button class="btn fantasma chico" onclick="toggleActivo('${esc(u.usuario)}', ${!u.activo})">${u.activo?'Desactivar':'Activar'}</button>` : ''}
+      </div>
+    </li>`;
+  return `
+    <div class="card">
+      <h3>Mozos <small>${us.filter(u=>u.rol==='mozo'&&u.activo).length} activos</small></h3>
+      <ul class="lista">${us.filter(u=>u.rol==='mozo').map(fila).join('')}</ul>
+    </div>
+    <div class="card">
+      <h3>Administradores</h3>
+      <ul class="lista">${us.filter(u=>u.rol==='admin').map(fila).join('')}</ul>
+    </div>
+    <div class="card">
+      <h3>Sumar persona</h3>
+      <label for="nNombre" style="margin-top:0">Nombre y apellido</label>
+      <input class="input" id="nNombre" placeholder="ej: Juan Pérez">
+      <label for="nRol">Rol</label>
+      <select class="input" id="nRol"><option value="mozo">Mozo</option><option value="admin">Administrador</option></select>
+      <p class="det" style="color:var(--gris);font-size:12.5px;margin-top:10px">Al sumar un mozo, el objetivo individual se recalcula solo entre todos los mozos activos.</p>
+      <button class="btn full" style="margin-top:8px" onclick="agregarPersona(this)">Sumar</button>
+    </div>`;
+}
+function mostrarClave(titulo, usuario, clave){
+  modal(`<h3>${esc(titulo)}</h3>
+    <p style="margin:6px 0 0;color:var(--gris);font-size:14px">Pasale estos datos. Puede cambiar la contraseña desde la app.</p>
+    <label>Usuario</label><div class="clave-box" style="font-size:17px">${esc(usuario)}</div>
+    <label>Contraseña</label><div class="clave-box">${esc(clave)}</div>
+    <div class="acciones"><button class="btn" onclick="cerrarModal()">Listo</button></div>`);
+}
+async function agregarPersona(btn){
+  const nombre = $('#nNombre').value.trim();
+  if (nombre.length < 2) { toast('Escribí el nombre', 'err'); return; }
+  await conBoton(btn, async () => {
+    const r = await api('agregarUsuario', { nombre, rol: $('#nRol').value });
+    S.usuarios = (await api('usuarios')).usuarios;
+    await refrescarAdmin();
+    mostrarClave(nombre + ' ya tiene cuenta', r.usuario, r.clave);
+  });
+}
+async function nuevaClave(usuario, nombre){
+  if (!confirm(`¿Generar una contraseña nueva para ${nombre}? La anterior deja de funcionar.`)) return;
+  try { const r = await api('resetClave', { usuario }); mostrarClave('Nueva contraseña de ' + nombre, r.usuario, r.clave); }
+  catch(e) { toast(e.message, 'err'); }
+}
+async function toggleActivo(usuario, activo){
+  if (!activo && !confirm('¿Desactivar? No va a poder entrar ni va a contar para el objetivo. Sus ventas quedan registradas.')) return;
+  try {
+    await api('setActivo', { usuario, activo });
+    S.usuarios = (await api('usuarios')).usuarios;
+    toast(activo ? 'Activado' : 'Desactivado', 'ok');
+    await refrescarAdmin();
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+/* ----- ajustes ----- */
+function tabAjustes(){
+  const q = S.data.quincena;
+  return `
+    <div class="card">
+      <h3>Objetivos por quincena</h3>
+      <p style="margin:0 0 4px;color:var(--gris);font-size:13.5px">Ahora la ${esc(q.quincena.etiqueta)} tiene un objetivo de <b>${fmt(q.objetivo)}</b> vinos.</p>
+      <div class="filtros">
+        <div><label for="oQ1">1ª quincena (1 al 15)</label><input class="input" type="number" min="1" id="oQ1" value="${q.quincena.q===1?q.objetivo:''}" placeholder="300"></div>
+        <div><label for="oQ2">2ª quincena (16 a fin)</label><input class="input" type="number" min="1" id="oQ2" value="${q.quincena.q===2?q.objetivo:''}" placeholder="180"></div>
+      </div>
+      <p class="det" style="color:var(--gris);font-size:12.5px;margin-top:10px">Con 480 en el mes: 60/40 sería 288 y 192. El objetivo por mozo y el mínimo para el premio (90%) se calculan solos.</p>
+      <button class="btn full" style="margin-top:8px" onclick="guardarObjetivos(this)">Guardar objetivos</button>
+    </div>
+    <div class="card">
+      <h3>Cómo funciona el premio</h3>
+      <ul style="margin:0;padding-left:18px;color:var(--tinta);font-size:14px">
+        <li>El mes se divide en dos quincenas: del 1 al 15 y del 16 a fin de mes.</li>
+        <li>Objetivo por mozo = objetivo de la quincena ÷ mozos activos.</li>
+        <li>Gana <b>$${fmt(q.premio)}</b> el que más vende, si llegó al 90% de su objetivo.</li>
+        <li>Si nadie llega al mínimo, el premio de esa quincena queda desierto.</li>
+      </ul>
+    </div>`;
+}
+async function guardarObjetivos(btn){
+  const q1 = parseInt($('#oQ1').value), q2 = parseInt($('#oQ2').value);
+  if (!(q1 > 0) || !(q2 > 0)) { toast('Completá los dos objetivos', 'err'); return; }
+  await conBoton(btn, async () => { await api('objetivos', { q1, q2 }); toast('Objetivos guardados', 'ok'); await refrescarAdmin(); });
+}
+
+/* ---------------- modal / contraseña ---------------- */
+function modal(html){
+  cerrarModal();
+  const f = document.createElement('div');
+  f.className = 'modal-fondo'; f.id = 'modal';
+  f.innerHTML = `<div class="modal">${html}</div>`;
+  f.addEventListener('click', e => { if (e.target === f) cerrarModal(); });
+  document.body.appendChild(f);
+}
+function cerrarModal(){ const m = $('#modal'); if (m) m.remove(); }
+
+function modalClave(){
+  modal(`<h3>Cambiar contraseña</h3>
+    <label for="cA">Contraseña actual</label><input class="input" type="password" id="cA" autocomplete="current-password">
+    <label for="cN">Nueva contraseña</label><input class="input" type="password" id="cN" autocomplete="new-password" placeholder="mínimo 4 caracteres">
+    <label for="cN2">Repetila</label><input class="input" type="password" id="cN2" autocomplete="new-password">
+    <div class="acciones"><button class="btn sec" onclick="cerrarModal()">Cancelar</button><button class="btn" id="cOk">Cambiar</button></div>`);
+  $('#cOk').onclick = e => {
+    if ($('#cN').value !== $('#cN2').value) { toast('Las contraseñas nuevas no coinciden', 'err'); return; }
+    conBoton(e.currentTarget, async () => {
+      await api('cambiarClave', { actual: $('#cA').value, nueva: $('#cN').value });
+      cerrarModal(); toast('Contraseña cambiada', 'ok');
+    });
+  };
+}
+
+/* ---------------- arranque ---------------- */
+if (S.token) iniciar();
+</script>
+</body>
+</html>
