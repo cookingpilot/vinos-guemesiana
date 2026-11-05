@@ -95,6 +95,13 @@ main.wrap{margin-top:-48px}
 .ctrl input{width:56px;text-align:center;font-size:22px;font-weight:700;border:0;background:transparent;outline:none;-moz-appearance:textfield}
 .ctrl input::-webkit-outer-spin-button,.ctrl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
+.podio{list-style:none;margin:14px 0 0;padding:0;border-top:1px solid #ecd9ae}
+.podio li{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #ecd9ae}
+.podio .med{font-size:22px}
+.podio .pd b{display:block;font-size:14.5px}
+.podio .pd span{font-size:12px;color:#7a5d24}
+.podio .pt{font-family:Fraunces,serif;font-size:20px;font-weight:800;color:#8a6312}
+
 /* ---------- botones de un toque ---------- */
 .vinos{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
 .vino{position:relative;border:0;border-radius:20px;padding:20px 12px 18px;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#fff;box-shadow:0 6px 18px rgba(60,20,20,.18);-webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation;transition:transform .08s}
@@ -233,7 +240,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbxE1UnnoMWNIBysMJ969c4N
 const S = {
   token: leer('vg_token'),
   data: null,
-  periodo: 'quincena',
+  periodo: 'mes',
   rankingCache: {},
   form: { dia: 'hoy', fecha: null, m: 0, t: 0, usuario: '' },
   tab: 'resumen',
@@ -248,6 +255,7 @@ function guardar(k,v){ try { v == null ? localStorage.removeItem(k) : localStora
 const $ = s => document.querySelector(s);
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const fmt = n => Number(n || 0).toLocaleString('es-AR');
+const fpct = n => Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + '%';
 const DIAS = ['dom','lun','mar','mié','jue','vie','sáb'];
 function fFecha(iso){ if(!iso) return ''; const d = new Date(iso+'T12:00:00Z'); return DIAS[d.getUTCDay()] + ' ' + iso.slice(8,10) + '/' + iso.slice(5,7); }
 function sumarDias(iso,n){ const d = new Date(iso+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
@@ -320,62 +328,78 @@ async function refrescar(){
   const d = S.data;
   $('#tHola').textContent = d.yo.rol === 'admin' ? 'Panel de administración' : 'Hola,';
   $('#tNombre').textContent = d.yo.nombre;
-  $('#tQuincena').textContent = cap(d.quincena.quincena.etiqueta) + ' · ' + (d.quincena.diasRestantes === 1 ? 'último día' : 'quedan ' + d.quincena.diasRestantes + ' días');
+  $('#tQuincena').textContent = 'Meta de ' + d.mes.mes.etiqueta + ' · ' + (d.mes.diasRestantes === 1 ? 'último día' : d.mes.diasRestantes ? 'quedan ' + d.mes.diasRestantes + ' días' : 'cerrada');
   if (!S.form.fecha) S.form.fecha = d.hoy;
   d.yo.rol === 'admin' ? renderAdmin() : renderMozo();
 }
 const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 
 /* ---------------- bloques compartidos ---------------- */
-function bloquePremio(q){
-  let estado;
-  if (!q.lider) estado = 'Todavía no hay ventas cargadas esta quincena. ¡Arrancá vos!';
-  else if (q.premioDesbloqueado) estado = `🏆 <b>${esc(q.lider)}</b> ${q.empate ? 'van empatando' : 'va ganando'} con <b>${fmt(q.ranking[0].total)}</b> vinos.`;
-  else estado = `Va primero <b>${esc(q.lider)}</b> con ${fmt(q.ranking[0].total)} vinos, pero nadie llegó todavía al mínimo de <b>${fmt(q.piso)}</b> para ganar el premio.`;
+function bloqueMeta(q, admin){
+  const pct = Math.min(100, q.avanceEquipo);
+  const candado = q.desbloqueado
+    ? '<span class="pill ok">🔓 Premios desbloqueados</span>'
+    : '<span class="pill">🔒 Premios bloqueados</span>';
+  const estado = q.desbloqueado
+    ? `¡Llegaron a la meta! Ahora gana el que más venda hasta el último día.`
+    : `Faltan <b>${fmt(q.faltan)}</b> vinos entre todos${admin && q.porDia ? ` · unos <b>${fmt(q.porDia)}</b> por día` : ''} para desbloquear los premios.`;
+  const medallas = ['🥇','🥈','🥉'];
+  const podio = [0,1,2].map(i => {
+    const p = q.podio.find(x => x.puesto === i + 1);
+    return `<li>
+      <span class="med">${medallas[i]}</span>
+      <div class="pd"><b>${p ? esc(p.nombre) : '—'}</b><span>${esc(q.premios[i])}</span></div>
+      <span class="pt">${p ? (admin ? fmt(p.total) : fpct(p.pct)) : ''}</span>
+    </li>`;
+  }).join('');
   return `
   <div class="card premio">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-      <div>
-        <div style="font-size:12.5px;font-weight:600;color:#7a5d24;margin-bottom:6px">PREMIO DE LA QUINCENA</div>
-        <div class="monto">$${fmt(q.premio)}</div>
-      </div>
-      <span class="pill">${q.diasRestantes === 1 ? 'Último día' : q.diasRestantes + ' días'}</span>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div style="font-size:12.5px;font-weight:600;color:#7a5d24">META DEL EQUIPO · ${esc(q.mes.etiqueta.toUpperCase())}</div>
+      ${candado}
     </div>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px">
+      <div class="monto">${fmt(q.equipo)}</div><div style="color:#7a5d24;font-weight:600">/ ${fmt(q.objetivo)} vinos</div>
+    </div>
+    <div class="barra" style="background:#efe2c4"><i style="width:${pct}%;background:linear-gradient(90deg,#c99a3b,#8a6312)"></i></div>
     <div class="estado">${estado}</div>
-    <div class="meta">
-      <span>🎯 Objetivo por mozo: <b>${fmt(q.objetivoPorMozo)}</b></span>
-      <span>✅ Mínimo para el premio: <b>${fmt(q.piso)}</b></span>
-    </div>
+    ${q.sinAsignar ? `<div class="meta"><span>Incluye ${fmt(q.sinAsignar)} vendidos antes de la app, sin mozo asignado.</span></div>` : ''}
+    <ol class="podio">${podio}</ol>
+    <div class="meta"><span>El premio lo lleva quien lidere el podio al cierre del mes, solo si el equipo llega a la meta.</span></div>
   </div>`;
 }
 
 function bloqueRanking(){
-  const tabs = [['hoy','Hoy'],['2dias','Últimos 2 días'],['3dias','Últimos 3 días'],['semana','Semana'],['quincena','Quincena']];
+  const tabs = [['hoy','Hoy'],['2dias','Últimos 2 días'],['3dias','Últimos 3 días'],['semana','Semana'],['mes','Mes']];
   return `
   <div class="card">
     <h3>Ranking</h3>
     <div class="tabs">${tabs.map(([k,l]) => `<button class="${S.periodo===k?'on':''}" onclick="cambiarPeriodo('${k}')">${l}</button>`).join('')}</div>
-    <div id="rkLista">${listaRanking(S.periodo === 'quincena' ? S.data.quincena.ranking : (S.rankingCache[S.periodo] || null))}</div>
+    <div id="rkLista">${listaRanking(S.periodo === 'mes' ? S.data.mes.ranking : (S.rankingCache[S.periodo] || null))}</div>
   </div>`;
 }
 
 function listaRanking(lista){
   if (!lista) return '<div class="vacio"><div class="spin"></div></div>';
-  const conVentas = lista.filter(x => x.total > 0);
-  if (!conVentas.length) return '<div class="vacio">Sin ventas cargadas en este período.</div>';
-  const max = Math.max(1, ...lista.map(x => x.total));
   const admin = S.data.yo.rol === 'admin';
-  return '<ol class="rk">' + lista.map((x,i) => {
-    const pos = x.total > 0 ? i + 1 : '–';
+  const vende = x => admin ? x.total > 0 : (x.conVentas || x.total > 0);
+  if (!lista.some(vende)) return '<div class="vacio">Sin ventas cargadas en este período.</div>';
+  const valor = x => admin ? x.total : x.pct;
+  const max = Math.max(0.0001, ...lista.map(valor));
+  let pos = 0, ant = null;
+  return (admin ? '' : '<p class="det" style="color:var(--gris);font-size:12.5px;margin:0 0 6px">Porcentaje de la meta del mes que vendió cada uno.</p>') +
+   '<ol class="rk">' + lista.map(x => {
+    let p = '–';
+    if (vende(x)) { if (valor(x) !== ant) { pos++; ant = valor(x); } p = pos; }
     const yo = x.esYo || x.usuario === S.data.yo.usuario;
     let sub = '';
-    if (admin || yo) sub = `<span class="sub">Malbec ${fmt(x.malbec)} · Torrontés ${fmt(x.torrontes)}</span>`;
-    let extra = '';
-    if (x.avance !== undefined && S.periodo === 'quincena') extra = `<small>${x.avance}%${x.llegaAlPiso ? ' ✓' : ''}</small>`;
+    if (admin) sub = `<span class="sub">Malbec ${fmt(x.malbec)} · Torrontés ${fmt(x.torrontes)}</span>`;
+    else if (yo) sub = `<span class="sub">${fmt(x.total)} vinos · Malbec ${fmt(x.malbec)} · Torrontés ${fmt(x.torrontes)}</span>`;
+    const derecha = admin ? `${fmt(x.total)}<small>${fpct(x.pct)}</small>` : fpct(x.pct);
     return `<li class="${yo && !admin ? 'yo' : ''}">
-      <div class="pos ${pos===1?'p1':pos===2?'p2':pos===3?'p3':''}">${pos}</div>
-      <div class="n">${esc(x.nombre)}${yo && !admin ? ' <span class="pill vino">vos</span>' : ''}${sub}<div class="mini"><i style="width:${Math.round(x.total/max*100)}%"></i></div></div>
-      <div class="t">${fmt(x.total)}${extra}</div>
+      <div class="pos ${p===1?'p1':p===2?'p2':p===3?'p3':''}">${p}</div>
+      <div class="n">${esc(x.nombre)}${yo && !admin ? ' <span class="pill vino">vos</span>' : ''}${sub}<div class="mini"><i style="width:${Math.round(valor(x)/max*100)}%"></i></div></div>
+      <div class="t">${derecha}</div>
     </li>`;
   }).join('') + '</ol>';
 }
@@ -383,7 +407,7 @@ function listaRanking(lista){
 async function cambiarPeriodo(p){
   S.periodo = p;
   document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.getAttribute('onclick').indexOf("'"+p+"'") >= 0));
-  if (p === 'quincena') { $('#rkLista').innerHTML = listaRanking(S.data.quincena.ranking); return; }
+  if (p === 'mes') { $('#rkLista').innerHTML = listaRanking(S.data.mes.ranking); return; }
   if (S.rankingCache[p]) { $('#rkLista').innerHTML = listaRanking(S.rankingCache[p]); return; }
   $('#rkLista').innerHTML = listaRanking(null);
   try {
@@ -556,11 +580,7 @@ window.addEventListener('beforeunload', e => { if (P.m + P.t) { e.preventDefault
 
 /* ---------------- vista MOZO ---------------- */
 function renderMozo(){
-  const d = S.data, q = d.quincena, mio = d.mio;
-  const obj = Math.max(1, q.objetivoPorMozo);
-  const pct = Math.min(100, Math.round(mio.total / obj * 100));
-  const pisoPct = Math.min(100, Math.round(q.piso / obj * 100));
-  const faltan = Math.max(0, q.piso - mio.total);
+  const d = S.data, q = d.mes, mio = d.mio;
 
   const cargas = d.misCargas.length ? '<ul class="lista">' + d.misCargas.map(c => `
     <li>
@@ -572,19 +592,17 @@ function renderMozo(){
   $('#main').innerHTML = `
     ${bloqueBotones()}
     <div class="card">
-      <h3>Tu quincena ${d.puesto && mio.total > 0 ? `<span class="pill vino">Puesto ${d.puesto}</span>` : ''}</h3>
+      <h3>Tus vinos del mes</h3>
       <div class="mi-row">
         <div><div class="grande">${fmt(mio.total)}</div><div class="det" style="color:var(--gris);font-size:13px;margin-top:4px">vinos vendidos · hoy ${fmt(d.miHoy)}</div></div>
-        <div style="text-align:right">${mio.total >= q.piso ? '<span class="pill ok">✓ Llegaste al mínimo</span>' : `<span class="pill">Te faltan ${fmt(faltan)} para el mínimo</span>`}</div>
+        <div style="text-align:right">${mio.total > 0 ? `<span class="pill ${d.puesto===1?'ok':'vino'}">${d.puesto===1?'🥇 Vas primero':'Puesto '+d.puesto}</span><div class="det" style="color:var(--gris);font-size:12.5px;margin-top:6px">${fpct(mio.pct)} de la meta</div>` : ''}</div>
       </div>
       <div class="cepas">
         <span class="cepa"><span class="punto" style="background:var(--malbec)"></span>Malbec ${fmt(mio.malbec)}</span>
         <span class="cepa"><span class="punto" style="background:var(--torrontes)"></span>Torrontés ${fmt(mio.torrontes)}</span>
       </div>
-      <div class="barra"><i style="width:${pct}%"></i><span class="marca-piso" style="left:${pisoPct}%"></span></div>
-      <div class="barra-leyenda"><span>${pct}% de tu objetivo</span><span>Objetivo: ${fmt(q.objetivoPorMozo)}</span></div>
     </div>
-    ${bloquePremio(q)}
+    ${bloqueMeta(q, false)}
     ${bloqueRanking()}
     <div class="card"><h3>Tus últimas cargas <small>podés anular hasta 24 h después</small></h3>${cargas}</div>
   `;
@@ -617,24 +635,18 @@ function pintarTab(){
 }
 
 function tabResumen(){
-  const q = S.data.quincena;
-  const pctEq = Math.min(100, q.avanceEquipo);
+  const q = S.data.mes;
   return `
     <div class="kpis">
       <div class="kpi"><div class="l">Vendidos (equipo)</div><div class="v">${fmt(q.equipo)} <small>/ ${fmt(q.objetivo)}</small></div></div>
-      <div class="kpi"><div class="l">Avance del equipo</div><div class="v">${q.avanceEquipo}%</div></div>
-      <div class="kpi"><div class="l">Objetivo por mozo</div><div class="v">${fmt(q.objetivoPorMozo)}</div></div>
-      <div class="kpi"><div class="l">Mínimo para premio</div><div class="v">${fmt(q.piso)}</div></div>
+      <div class="kpi"><div class="l">Avance</div><div class="v">${q.avanceEquipo}%</div></div>
+      <div class="kpi"><div class="l">Faltan</div><div class="v">${fmt(q.faltan)}</div></div>
+      <div class="kpi"><div class="l">Necesarios por día</div><div class="v">${fmt(q.porDia)}</div></div>
     </div>
-    <div class="card">
-      <h3>Objetivo de la quincena <small>${esc(cap(q.quincena.etiqueta))}</small></h3>
-      <div class="barra" style="margin-top:4px"><i style="width:${pctEq}%"></i></div>
-      <div class="barra-leyenda"><span>${fmt(q.equipo)} vendidos</span><span>Faltan ${fmt(Math.max(0, q.objetivo - q.equipo))}</span></div>
-    </div>
-    ${bloquePremio(q)}
+    ${bloqueMeta(q, true)}
     ${bloqueRanking()}
     <div class="card">
-      <h3>Ganadores por quincena</h3>
+      <h3>Ganadores por mes</h3>
       <div id="hist"><button class="btn sec chico" onclick="verHistorial(this)">Ver historial</button></div>
     </div>`;
 }
@@ -644,19 +656,21 @@ async function verHistorial(btn){
   try {
     const r = await api('historial');
     $('#hist').innerHTML = r.historial.length ? '<ul class="lista">' + r.historial.map(h => {
+      const p1 = h.podio.find(p => p.puesto === 1);
       let res;
-      if (!h.lider) res = '<span class="pill gris">Sin ventas</span>';
-      else if (h.premioDesbloqueado) res = `<span class="pill ok">🏆 ${esc(h.lider)}</span>`;
-      else res = `<span class="pill gris">${h.cerrada ? 'Desierto' : 'Sin ganador aún'}</span>`;
-      return `<li><div><b>${esc(cap(h.etiqueta))}</b>${h.cerrada ? '' : ' <span class="pill vino">en curso</span>'}
-        <div class="det">Equipo ${fmt(h.equipo)} / ${fmt(h.objetivo)} · líder ${fmt(h.liderTotal)} (mínimo ${fmt(h.piso)})</div></div>${res}</li>`;
-    }).join('') + '</ul>' : '<div class="vacio">Todavía no hay quincenas con ventas.</div>';
+      if (!p1) res = '<span class="pill gris">Sin ventas</span>';
+      else if (h.desbloqueado) res = `<span class="pill ok">🏆 ${esc(p1.nombre)}</span>`;
+      else res = `<span class="pill gris">${h.cerrado ? 'Meta no alcanzada' : 'Bloqueado'}</span>`;
+      const resto = h.podio.filter(p => p.puesto > 1).map(p => `${p.puesto}º ${esc(p.nombre)} (${fmt(p.total)})`).join(' · ');
+      return `<li><div><b>${esc(cap(h.etiqueta))}</b>${h.cerrado ? '' : ' <span class="pill vino">en curso</span>'}
+        <div class="det">Equipo ${fmt(h.equipo)} / ${fmt(h.objetivo)}${p1 ? ` · 1º ${fmt(p1.total)}` : ''}${resto ? ' · ' + resto : ''}</div></div>${res}</li>`;
+    }).join('') + '</ul>' : '<div class="vacio">Todavía no hay meses con ventas.</div>';
   } catch(e) { toast(e.message, 'err'); btn.disabled = false; btn.textContent = 'Ver historial'; }
 }
 
 /* ----- ventas ----- */
 function tabVentas(){
-  const q = S.data.quincena.quincena;
+  const q = S.data.mes.mes;
   if (!S.filtro) S.filtro = { desde: q.desde, hasta: q.hasta, usuario: '', anuladas: false };
   const f = S.filtro;
   const mozos = (S.usuarios || []).filter(u => u.rol === 'mozo');
@@ -673,7 +687,7 @@ function tabVentas(){
       <label class="check"><input type="checkbox" id="fAnul" ${f.anuladas?'checked':''}> Mostrar también las anuladas</label>
       <div class="fila-acc">
         <button class="btn chico" onclick="aplicarFiltro()">Buscar</button>
-        <button class="btn sec chico" onclick="atajoFiltro('quincena')">Esta quincena</button>
+        <button class="btn sec chico" onclick="atajoFiltro('hoy')">Hoy</button>
         <button class="btn sec chico" onclick="atajoFiltro('mes')">Este mes</button>
         <button class="btn sec chico" onclick="exportarCSV()">Descargar CSV</button>
       </div>
@@ -685,10 +699,9 @@ function aplicarFiltro(){
   buscarVentas();
 }
 function atajoFiltro(t){
-  const h = S.data.hoy, q = S.data.quincena.quincena;
-  S.filtro.desde = t === 'mes' ? h.slice(0,8) + '01' : q.desde;
-  const finMes = () => { const [y,m] = h.split('-').map(Number); return h.slice(0,8) + String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2,'0'); };
-  S.filtro.hasta = t === 'mes' ? finMes() : q.hasta;
+  const h = S.data.hoy, q = S.data.mes.mes;
+  S.filtro.desde = t === 'hoy' ? h : q.desde;
+  S.filtro.hasta = t === 'hoy' ? h : q.hasta;
   $('#fDesde').value = S.filtro.desde; $('#fHasta').value = S.filtro.hasta;
   aplicarFiltro();
 }
@@ -782,7 +795,7 @@ function tabEquipo(){
       <input class="input" id="nNombre" placeholder="ej: Juan Pérez">
       <label for="nRol">Rol</label>
       <select class="input" id="nRol"><option value="mozo">Mozo</option><option value="admin">Administrador</option></select>
-      <p class="det" style="color:var(--gris);font-size:12.5px;margin-top:10px">Al sumar un mozo, el objetivo individual se recalcula solo entre todos los mozos activos.</p>
+      <p class="det" style="color:var(--gris);font-size:12.5px;margin-top:10px">Los mozos desactivados no pueden entrar y no aparecen en el ranking, pero sus ventas quedan registradas.</p>
       <button class="btn full" style="margin-top:8px" onclick="agregarPersona(this)">Sumar</button>
     </div>`;
 }
@@ -820,32 +833,31 @@ async function toggleActivo(usuario, activo){
 
 /* ----- ajustes ----- */
 function tabAjustes(){
-  const q = S.data.quincena;
+  const q = S.data.mes;
   return `
     <div class="card">
-      <h3>Objetivos por quincena</h3>
-      <p style="margin:0 0 4px;color:var(--gris);font-size:13.5px">Ahora la ${esc(q.quincena.etiqueta)} tiene un objetivo de <b>${fmt(q.objetivo)}</b> vinos.</p>
+      <h3>Meta del mes <small>${esc(q.mes.etiqueta)}</small></h3>
       <div class="filtros">
-        <div><label for="oQ1">1ª quincena (1 al 15)</label><input class="input" type="number" min="1" id="oQ1" value="${q.quincena.q===1?q.objetivo:''}" placeholder="300"></div>
-        <div><label for="oQ2">2ª quincena (16 a fin)</label><input class="input" type="number" min="1" id="oQ2" value="${q.quincena.q===2?q.objetivo:''}" placeholder="180"></div>
+        <div><label for="oObj">Meta del equipo (vinos)</label><input class="input" type="number" min="1" id="oObj" value="${q.objetivo}"></div>
+        <div><label for="oExtra">Vendidos sin mozo asignado</label><input class="input" type="number" min="0" id="oExtra" value="${q.sinAsignar}"></div>
       </div>
-      <p class="det" style="color:var(--gris);font-size:12.5px;margin-top:10px">Con 480 en el mes: 60/40 sería 288 y 192. El objetivo por mozo y el mínimo para el premio (90%) se calculan solos.</p>
-      <button class="btn full" style="margin-top:8px" onclick="guardarObjetivos(this)">Guardar objetivos</button>
+      <p class="det" style="color:var(--gris);font-size:12.5px;margin-top:10px">Los vinos sin mozo asignado suman a la meta del equipo pero no al ranking. Se guardan solo para el mes en curso.</p>
+      <button class="btn full" style="margin-top:8px" onclick="guardarObjetivos(this)">Guardar</button>
     </div>
     <div class="card">
-      <h3>Cómo funciona el premio</h3>
+      <h3>Cómo funcionan los premios</h3>
       <ul style="margin:0;padding-left:18px;color:var(--tinta);font-size:14px">
-        <li>El mes se divide en dos quincenas: del 1 al 15 y del 16 a fin de mes.</li>
-        <li>Objetivo por mozo = objetivo de la quincena ÷ mozos activos.</li>
-        <li>Gana <b>$${fmt(q.premio)}</b> el que más vende, si llegó al 90% de su objetivo.</li>
-        <li>Si nadie llega al mínimo, el premio de esa quincena queda desierto.</li>
+        <li>La meta es grupal: <b>${fmt(q.objetivo)}</b> vinos entre todos hasta el último día del mes.</li>
+        <li>No hay techo: cada mozo puede vender todo lo que quiera.</li>
+        <li>🥇 ${esc(q.premios[0])} · 🥈 ${esc(q.premios[1])} · 🥉 ${esc(q.premios[2])}.</li>
+        <li>Los premios solo se entregan si el equipo llega a la meta. Si no, no se desbloquea ninguno.</li>
       </ul>
     </div>`;
 }
 async function guardarObjetivos(btn){
-  const q1 = parseInt($('#oQ1').value), q2 = parseInt($('#oQ2').value);
-  if (!(q1 > 0) || !(q2 > 0)) { toast('Completá los dos objetivos', 'err'); return; }
-  await conBoton(btn, async () => { await api('objetivos', { q1, q2 }); toast('Objetivos guardados', 'ok'); await refrescarAdmin(); });
+  const objetivo = parseInt($('#oObj').value), extra = parseInt($('#oExtra').value) || 0;
+  if (!(objetivo > 0)) { toast('Completá la meta', 'err'); return; }
+  await conBoton(btn, async () => { await api('objetivos', { objetivo, extra }); toast('Guardado', 'ok'); await refrescarAdmin(); });
 }
 
 /* ---------------- modal / contraseña ---------------- */
